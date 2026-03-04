@@ -89,59 +89,7 @@ CLASS_DESCRIPTIONS = {
     'Tomato___healthy': "Tomato plant — healthy and disease-free"
 }
 
-HF_TO_ORIGINAL = {
-    'Apple Scab': 'Apple___Apple_scab',
-    'Apple with Black Rot': 'Apple___Black_rot',
-    'Cedar Apple Rust': 'Apple___Cedar_apple_rust',
-    'Healthy Apple': 'Apple___healthy',
-    'Healthy Blueberry Plant': 'Blueberry___healthy',
-    'Cherry with Powdery Mildew': 'Cherry_(including_sour)___Powdery_mildew',
-    'Healthy Cherry Plant': 'Cherry_(including_sour)___healthy',
-    'Corn (Maize) with Cercospora and Gray Leaf Spot': 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot',
-    'Corn (Maize) with Common Rust': 'Corn_(maize)___Common_rust_',
-    'Corn (Maize) with Northern Leaf Blight': 'Corn_(maize)___Northern_Leaf_Blight',
-    'Healthy Corn (Maize)': 'Corn_(maize)___healthy',
-    'Grape with Black Rot': 'Grape___Black_rot',
-    'Grape with Esca (Black Measles)': 'Grape___Esca_(Black_Measles)',
-    'Grape with Leaf Blight (Isariopsis Leaf Spot)': 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)',
-    'Healthy Grape': 'Grape___healthy',
-    'Orange with Citrus Greening': 'Orange___Haunglongbing_(Citrus_greening)',
-    'Peach with Bacterial Spot': 'Peach___Bacterial_spot',
-    'Healthy Peach': 'Peach___healthy',
-    'Bell Pepper with Bacterial Spot': 'Pepper,_bell___Bacterial_spot',
-    'Healthy Bell Pepper': 'Pepper,_bell___healthy',
-    'Potato with Early Blight': 'Potato___Early_blight',
-    'Potato with Late Blight': 'Potato___Late_blight',
-    'Healthy Potato': 'Potato___healthy',
-    'Healthy Raspberry Plant': 'Raspberry___healthy',
-    'Healthy Soybean Plant': 'Soybean___healthy',
-    'Squash with Powdery mildew': 'Squash___Powdery_mildew',
-    'Squash with Powdery Mildew': 'Squash___Powdery_mildew',
-    'Strawberry with Leaf Scorch': 'Strawberry___Leaf_scorch',
-    'Healthy Strawberry Plant': 'Strawberry___healthy',
-    'Tomato with Bacterial Spot': 'Tomato___Bacterial_spot',
-    'Tomato with Early Blight': 'Tomato___Early_blight',
-    'Tomato with Late Blight': 'Tomato___Late_blight',
-    'Tomato with Leaf Mold': 'Tomato___Leaf_Mold',
-    'Tomato with Septoria Leaf Spot': 'Tomato___Septoria_leaf_spot',
-    'Tomato with Spider Mites (Two-Spotted Spider Mite)': 'Tomato___Spider_mites Two-spotted_spider_mite',
-    'Tomato with Target Spot': 'Tomato___Target_Spot',
-    'Tomato with Yellow Leaf Curl Virus': 'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
-    'Tomato with Mosaic Virus': 'Tomato___Tomato_mosaic_virus',
-    'Healthy Tomato': 'Tomato___healthy',
-    
-    # Missing extra aliases:
-    'Healthy Corn (Maize) Plant': 'Corn_(maize)___healthy',
-    'Grape with Isariopsis Leaf Spot': 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)',
-    'Healthy Grape Plant': 'Grape___healthy',
-    'Healthy Peach Plant': 'Peach___healthy',
-    'Healthy Bell Pepper Plant': 'Pepper,_bell___healthy',
-    'Healthy Potato Plant': 'Potato___healthy',
-    'Tomato with Spider Mites or Two-spotted Spider Mite': 'Tomato___Spider_mites Two-spotted_spider_mite',
-    'Tomato Yellow Leaf Curl Virus': 'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
-    'Tomato Mosaic Virus': 'Tomato___Tomato_mosaic_virus',
-    'Healthy Tomato Plant': 'Tomato___healthy'
-}
+# No HF_TO_ORIGINAL mapping needed — ozair23 model outputs native Crop___Disease labels
 
 # ─── Model Loading ─────────────────────────────────────────────────────
 _model = None
@@ -150,8 +98,8 @@ _processor = None
 def get_model():
     global _model, _processor
     if _model is None:
-        print("🔄 Loading MobileNetV2 PyTorch model from HuggingFace...")
-        model_name = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+        print("🔄 Loading MobileNetV2 (ozair23) from HuggingFace...")
+        model_name = "ozair23/mobilenet_v2_1.0_224-finetuned-plantdisease"
         try:
             _processor = MobileNetV2ImageProcessor()
             _model = AutoModelForImageClassification.from_pretrained(model_name)
@@ -284,7 +232,7 @@ def image_to_base64(pil_img):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": "MobileNetV2-TTA", "classes": len(CLASSES)}
+    return {"status": "ok", "model": "MobileNetV2-PlantVillage-TTA", "classes": len(CLASSES)}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
@@ -318,13 +266,8 @@ async def predict(file: UploadFile = File(...)):
         confidence = float(torch.max(probs))
         class_idx = int(torch.argmax(probs))
         
-        predicted_hf_label = model.config.id2label[class_idx]
-        
-        # If the model already outputs "Crop___Disease" format natively, use it directly.
-        if "___" in predicted_hf_label:
-            predicted_class = predicted_hf_label
-        else:
-            predicted_class = HF_TO_ORIGINAL.get(predicted_hf_label, "Unknown___Unknown")
+        # ozair23 model outputs native Crop___Disease format directly
+        predicted_class = model.config.id2label[class_idx]
         description = CLASS_DESCRIPTIONS.get(predicted_class, predicted_class)
         is_healthy = "healthy" in predicted_class.lower()
 
@@ -348,16 +291,10 @@ async def predict(file: UploadFile = File(...)):
         top5_prob, top5_catid = torch.topk(probs, 5)
         top5 = []
         for i in range(top5_prob.size(0)):
-            hf_lbl = model.config.id2label[top5_catid[i].item()]
-            
-            if "___" in hf_lbl:
-                orig_lbl = hf_lbl
-            else:
-                orig_lbl = HF_TO_ORIGINAL.get(hf_lbl, "Unknown___Unknown")
-                
+            lbl = model.config.id2label[top5_catid[i].item()]
             top5.append({
-                "class": orig_lbl,
-                "description": CLASS_DESCRIPTIONS.get(orig_lbl, orig_lbl),
+                "class": lbl,
+                "description": CLASS_DESCRIPTIONS.get(lbl, lbl),
                 "confidence": float(top5_prob[i].item())
             })
             
@@ -378,7 +315,7 @@ async def predict(file: UploadFile = File(...)):
                 "original": original_b64,
             },
             "allProbabilities": {
-                (model.config.id2label[i] if "___" in model.config.id2label[i] else HF_TO_ORIGINAL.get(model.config.id2label[i], "Unknown___Unknown")): float(probs[i]) for i in range(len(probs))
+                model.config.id2label[i]: float(probs[i]) for i in range(len(probs))
             }
         })
 
