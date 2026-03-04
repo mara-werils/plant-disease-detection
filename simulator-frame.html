@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>iOS Simulator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1e1e1e;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Helvetica Neue', sans-serif;
+  }
+  .simulator {
+    width: 393px;
+    background: #000;
+    border-radius: 48px;
+    padding: 14px;
+    box-shadow: 0 0 0 3px #333, 0 0 0 5px #555, 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .simulator-header {
+    background: #2d2d2d;
+    padding: 6px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
+  }
+  .simulator-title {
+    color: #ccc;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .window-controls {
+    display: flex;
+    gap: 6px;
+  }
+  .window-controls span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .window-controls .close { background: #ff5f57; }
+  .window-controls .minimize { background: #febc2e; }
+  .window-controls .maximize { background: #28c840; }
+  .device-frame {
+    background: #000;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #333;
+  }
+  /* Dynamic Island */
+  .dynamic-island {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 10;
+  }
+  /* Status bar */
+  .status-bar {
+    height: 54px;
+    background: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 32px 8px;
+    position: relative;
+    z-index: 5;
+  }
+  .status-time {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .status-icons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    color: #fff;
+    font-size: 12px;
+  }
+  .status-icons svg { width: 16px; height: 12px; fill: #fff; }
+  /* Screen content */
+  .screen-content {
+    width: 100%;
+    height: 798px;
+    border: none;
+    display: block;
+    margin-top: -54px;
+  }
+  /* Home indicator */
+  .home-indicator {
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+  }
+  .home-indicator-bar {
+    width: 134px;
+    height: 5px;
+    background: #fff;
+    border-radius: 3px;
+    opacity: 0.3;
+  }
+  /* Toolbar at bottom */
+  .simulator-toolbar {
+    background: #2d2d2d;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    border-radius: 0 0 8px 8px;
+  }
+  .toolbar-btn {
+    color: #888;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .toolbar-btn .icon { font-size: 16px; }
+  .xcode-bar {
+    background: #323232;
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 4px;
+    border-radius: 4px;
+  }
+  .xcode-bar .device-name { color: #4ec9b0; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div>
+    <!-- Xcode-like header -->
+    <div class="simulator-header">
+      <div class="window-controls">
+        <span class="close"></span>
+        <span class="minimize"></span>
+        <span class="maximize"></span>
+      </div>
+      <div class="simulator-title">iPhone 15 Pro — iOS 17.4 — PlantGuard AI</div>
+      <div style="width:50px"></div>
+    </div>
+    <div class="xcode-bar">
+      <span>Simulator</span>
+      <span class="device-name">iPhone 15 Pro</span>
+      <span>iOS 17.4 (21E213)</span>
+    </div>
+    <!-- Device -->
+    <div class="device-frame">
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <span class="status-icons">
+          <span>5G</span>
+          <span>🔋</span>
+        </span>
+      </div>
+      <iframe class="screen-content" src="http://localhost:8082" id="appFrame"></iframe>
+      <div class="home-indicator">
+        <div class="home-indicator-bar"></div>
+      </div>
+    </div>
+    <!-- Toolbar -->
+    <div class="simulator-toolbar">
+      <div class="toolbar-btn"><span class="icon">🏠</span> Home</div>
+      <div class="toolbar-btn"><span class="icon">🔄</span> Rotate</div>
+      <div class="toolbar-btn"><span class="icon">📷</span> Screenshot</div>
+    </div>
+  </div>
+</body>
+</html>

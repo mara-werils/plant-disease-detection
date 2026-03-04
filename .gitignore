@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# Build output
+.next/
+out/
+
+# Environment
+.env
+.env.local
+
+# Model weights
+*.npz
+*.h5
+*.pth
+*.pt
+*.onnx
+
+# Logs
+*.log
+
+# Test scripts
+api/test_*.py
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.pyc
+plant-disease-mobile/
