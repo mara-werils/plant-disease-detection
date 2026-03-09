@@ -98,16 +98,50 @@ _processor = None
 def get_model():
     global _model, _processor
     if _model is None:
-        print("🔄 Loading MobileNetV2 (ozair23) from HuggingFace...")
-        model_name = "ozair23/mobilenet_v2_1.0_224-finetuned-plantdisease"
+        custom_weights_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints", "best_final.pth")
+        
         try:
             _processor = MobileNetV2ImageProcessor()
-            _model = AutoModelForImageClassification.from_pretrained(model_name)
-            _model.eval()
-            print("✅ Model loaded successfully!")
+            
+            if os.path.exists(custom_weights_path):
+                print(f"🌟 Loading CUSTOM trained MobileNetV2 from {custom_weights_path}...")
+                import torchvision.models as models
+                import torch.nn as nn
+                
+                # Reconstruct the exact architecture trained on RunPod
+                _model = models.mobilenet_v2()
+                _model.classifier = nn.Sequential(
+                    nn.Dropout(0.4),
+                    nn.Linear(_model.last_channel, 256),
+                    nn.ReLU(),
+                    nn.Dropout(0.3),
+                    nn.Linear(256, len(CLASSES))
+                )
+                
+                # Load the trained weights
+                state_dict = torch.load(custom_weights_path, map_location=torch.device('cpu'), weights_only=True)
+                _model.load_state_dict(state_dict)
+                _model.eval()
+                
+                # We need to attach the config object to standard torchvision model so the rest of the file works
+                class DummyConfig:
+                    pass
+                _model.config = DummyConfig()
+                _model.config.id2label = {i: name for i, name in enumerate(CLASSES)}
+                
+                print("✅ Custom model loaded successfully!")
+                
+            else:
+                print("🔄 Loading MobileNetV2 (ozair23) from HuggingFace...")
+                model_name = "ozair23/mobilenet_v2_1.0_224-finetuned-plantdisease"
+                _model = AutoModelForImageClassification.from_pretrained(model_name)
+                _model.eval()
+                print("✅ HuggingFace Model loaded successfully!")
+                
         except Exception as e:
             print(f"❌ Error loading model: {e}")
             raise e
+            
     return _model, _processor
 
 
@@ -164,8 +198,10 @@ def predict_with_tta(pil_image, model, processor):
         pixel_values = inputs["pixel_values"]
         with torch.no_grad():
             outputs = model(pixel_values)
-            probs = F.softmax(outputs.logits, dim=-1)[0]
-            all_probs.append(probs)
+            # HF models return an object with logits, standard PyTorch models return the tensor directly
+            logits = outputs.logits if hasattr(outputs, "logits") else outputs
+            probs = F.softmax(logits, dim=-1)[0]
+        all_probs.append(probs)
     
     # Average predictions across all augmented views
     avg_probs = torch.stack(all_probs).mean(dim=0)
@@ -176,13 +212,14 @@ def make_saliency_map(img_tensor, model):
     """Generic Input Saliency Map using PyTorch gradients"""
     model.eval()
     input_tensor = img_tensor.clone().detach().requires_grad_(True)
-    
+    # Forward pass
     outputs = model(input_tensor)
-    logits = outputs.logits
-    class_idx = torch.argmax(logits, dim=-1)
+    logits = outputs.logits if hasattr(outputs, "logits") else outputs
     
-    loss = logits[0, class_idx]
-    loss.backward()
+    # Get the class with the highest probability
+    class_idx = logits[0].argmax().item()
+    score = logits[0, class_idx]
+    score.backward()
     
     saliency, _ = torch.max(input_tensor.grad.data.abs(), dim=1)
     saliency = saliency[0].cpu().numpy()
