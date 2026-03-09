@@ -1,11 +1,11 @@
-# 🌿 PlantGuard AI — Plant Disease Detection
+# PlantGuard AI — Plant Disease Detection
 
 AI-система диагностики болезней растений по фото листьев.  
 **MobileNetV2 + Test-Time Augmentation + Mistral-7B LLM рекомендации.**
 
 ---
 
-## ⚡ Быстрый старт
+## Быстрый старт
 
 ### 1. Клонировать репозиторий
 ```bash
