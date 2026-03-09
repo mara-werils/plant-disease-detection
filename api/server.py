@@ -383,9 +383,8 @@ async def recommend(req: RecommendRequest):
 
     try:
         from huggingface_hub import InferenceClient
-        # Standard HuggingFace Inference API
         client = InferenceClient(api_key=HF_TOKEN)
-
+        
         condition_type = "healthy" if req.isHealthy else "diseased"
         
         # Multi-Modal Context Injection
@@ -407,19 +406,24 @@ async def recommend(req: RecommendRequest):
         Format your response as a numbered list with detailed, scientifically sound points.
         """
 
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        
         completion = client.chat.completions.create(
-            model="mistralai/Mistral-7B-Instruct-v0.3",
+            model="meta-llama/Meta-Llama-3-8B-Instruct",
             messages=[
                 {"role": "system", "content": "You are a concise, professional agricultural expert and plant pathologist. Respond with direct, academic care instructions only. No conversational filler."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=500
+            max_tokens=600
         )
-
-        response = completion.choices[0].message["content"]
+        
+        response = completion.choices[0].message.content
         return JSONResponse({
-            "source": "mistral-7b",
+            "source": "llama-3-8b",
             "recommendations": response
         })
 
