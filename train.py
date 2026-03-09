@@ -42,48 +42,56 @@ if torch.cuda.is_available():
 # ─── STEP 1: Download PlantVillage Dataset ───────────────
 print("\n📥 Downloading PlantVillage dataset...")
 
-DATASET_URL = "https://data.mendeley.com/public-files/datasets/tywbtsjrjv/files/d5652a28-c1d8-4b76-97f3-72fb80f94efc/file_downloaded"
-DATASET_DIR = "./plantvillage"
+DATASET_DIR = None
 
-if not os.path.exists(DATASET_DIR):
-    import urllib.request
-    import zipfile
+# Method: Use opendatasets (Kaggle)
+try:
+    import opendatasets
+except ImportError:
+    os.system("pip install opendatasets -q")
+    import opendatasets
 
-    zip_path = "./plantvillage.zip"
-    if not os.path.exists(zip_path):
-        print("   Downloading (~1.5 GB)...")
-        urllib.request.urlretrieve(DATASET_URL, zip_path)
+kaggle_url = "https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset"
 
-    print("   Extracting...")
-    with zipfile.ZipFile(zip_path, 'r') as z:
-        z.extractall("./")
+# Check if already downloaded
+candidates = [
+    "./plantvillage-dataset/color",
+    "./plantvillage-dataset",
+    "./PlantVillage",
+    "./color",
+]
+for c in candidates:
+    if os.path.exists(c):
+        subdirs = [d for d in os.listdir(c) if os.path.isdir(os.path.join(c, d))]
+        if len(subdirs) >= 30:
+            DATASET_DIR = c
+            print(f"   Already downloaded: {DATASET_DIR} ({len(subdirs)} classes)")
+            break
 
-    # Find the actual data directory
-    for root, dirs, files in os.walk("./"):
-        if len(dirs) >= 30:  # PlantVillage has 38 class folders
-            if root != "./" and "color" in root.lower() or any("Apple" in d for d in dirs):
+if DATASET_DIR is None:
+    print("   Downloading from Kaggle (~1 GB)...")
+    print("   (If prompted for Kaggle credentials, enter your kaggle.com username + API key)")
+    print("   (Get API key at: https://www.kaggle.com/settings → Create New Token)")
+    opendatasets.download(kaggle_url, data_dir="./")
+
+    # Find the downloaded directory
+    for root, dirs, files in os.walk("./plantvillage-dataset"):
+        if len(dirs) >= 30:
+            DATASET_DIR = root
+            break
+
+    if DATASET_DIR is None:
+        # Fallback: search everywhere
+        for root, dirs, files in os.walk("./"):
+            if len(dirs) >= 30 and any("Apple" in d for d in dirs):
                 DATASET_DIR = root
                 break
 
     print(f"   Dataset dir: {DATASET_DIR}")
-else:
-    print(f"   Already exists: {DATASET_DIR}")
 
-# Try to find the right directory
-for candidate in [
-    DATASET_DIR,
-    "./Plant_leave_diseases_dataset_with_augmentation",
-    "./plantvillage dataset/color",
-    "./PlantVillage",
-    "./dataset/color",
-    "./color"
-]:
-    if os.path.exists(candidate):
-        subdirs = [d for d in os.listdir(candidate) if os.path.isdir(os.path.join(candidate, d))]
-        if len(subdirs) >= 30:
-            DATASET_DIR = candidate
-            print(f"   Found dataset at: {DATASET_DIR} ({len(subdirs)} classes)")
-            break
+if DATASET_DIR is None:
+    print("❌ Could not find dataset! Please download manually.")
+    exit(1)
 
 # ─── STEP 2: Data Augmentation Pipeline ──────────────────
 print("\n🔄 Setting up Data Augmentation pipeline...")
