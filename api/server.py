@@ -408,7 +408,7 @@ async def recommend(req: RecommendRequest):
         """
 
         completion = client.chat.completions.create(
-            model="mistralai/Mistral-7B-Instruct-v0.2",
+            model="mistralai/Mistral-7B-Instruct-v0.3",
             messages=[
                 {"role": "system", "content": "You are a concise, professional agricultural expert and plant pathologist. Respond with direct, academic care instructions only. No conversational filler."},
                 {"role": "user", "content": prompt}

@@ -571,8 +571,13 @@ function DetectionDemo() {
                     </div>
                   ) : recommendations ? (
                     <div className="glass-card recommendation-card" style={{ padding: 20 }}>
-                      <div style={{ fontSize: "0.85rem", lineHeight: 1.7, color: "var(--text-secondary)", whiteSpace: "pre-line" }}>
-                        {recommendations.recommendations}
+                      <div style={{ fontSize: "0.85rem", lineHeight: 1.7, color: "var(--text-secondary)" }}>
+                        {recommendations.recommendations.split('\n').map((line, i) => (
+                          <span key={i}>
+                            {line}
+                            <br />
+                          </span>
+                        ))}
                       </div>
                     </div>
                   ) : null}
